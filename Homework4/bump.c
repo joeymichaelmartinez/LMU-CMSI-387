@@ -4,30 +4,15 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define BUFFERSIZE 1024
 
 void execution(char** collectionOfInputs, int numberOfArguments) {
     char bin[2048] = "/bin/"; // figure what to allocate for this
     strcat(bin, collectionOfInputs[0]);
-    if (strcmp(collectionOfInputs[0], "cd") == 0) {
-        if (numberOfArguments == 1) {
-            chdir(getenv("HOME"));
-        } else {
-            chdir(collectionOfInputs[1]);
-        }
-    } else {
-        // for(int j =0; j < numberOfArguments; j++){
-        //     // printf("%s", collectionOfInputs[j]);
-        // }
-        pid_t pid2 = fork();
-        execv(bin, collectionOfInputs);
-    }
-    
+    execv(bin, collectionOfInputs);
 }
-// void forkSetup(char** collectionOfInputs, int numberOfArguments) {
-    
-// }
 
 int main(int argc, char** argv) {
     chdir(getenv("HOME"));
@@ -45,24 +30,31 @@ int main(int argc, char** argv) {
             i++;
         }
         collectionOfInputs[i] = '\0'; // Figure out a better way to do this
-        if (strcmp(collectionOfInputs[i - 1], "&") == 0) {
-            pid_t pid;
-            pid = fork();
-            if (pid == 0) {
-                // pid_t pid2 = fork();
-                collectionOfInputs[i - 1] = '\0';
-                execution(collectionOfInputs, i - 1);
+        int numberOfArguments = i;
+        if(collectionOfInputs[0] != '\0') {  
+            if (strcmp(collectionOfInputs[0], "cd") == 0) {
+                if (numberOfArguments == 1 || (numberOfArguments == 2 && strcmp(collectionOfInputs[i - 1], "&") == 0)) {
+                    chdir(getenv("HOME"));
+                } else {
+                    chdir(collectionOfInputs[1]);
+                }
+            } else if (strcmp(collectionOfInputs[i - 1], "&") == 0) {
+                if (!fork()) {
+                    if(!fork()) {
+                        collectionOfInputs[i - 1] = '\0';
+                        execution(collectionOfInputs, i - 1);
+                    } else {
+                        return 0;
+                    }
+                } else {
+                    wait(NULL);
+                }
             } else {
-                return 0;
-            }
+                if (!fork()) {
+                    execution(collectionOfInputs, i);
+                }
                 wait(NULL);
-        } else {
-            pid_t pid;
-            pid = fork();
-            if (pid == 0) {
-                execution(collectionOfInputs, i);
             }
-            wait(NULL);
         }
     }
     return 0;
