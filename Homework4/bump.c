@@ -9,7 +9,7 @@
 #define BUFFERSIZE 1024
 
 void execution(char** collectionOfInputs, int numberOfArguments) {
-    char bin[2048] = "/bin/"; // figure what to allocate for this
+    char bin[BUFFERSIZE] = "/bin/";
     strcat(bin, collectionOfInputs[0]);
     execv(bin, collectionOfInputs);
 }
@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         printf("BUMP::%s:: ", getcwd(buf, BUFFERSIZE));
         fgets(input, BUFFERSIZE, stdin);
         char* separatedInputs = strtok(input, " \n");
-        char* collectionOfInputs[2048]; // Figure out what space to allocate
+        char* collectionOfInputs[BUFFERSIZE]; // Figure out what space to allocate
         int i = 0;
         while (separatedInputs != NULL) {
             collectionOfInputs[i] = separatedInputs;
@@ -31,13 +31,15 @@ int main(int argc, char** argv) {
         }
         collectionOfInputs[i] = '\0'; // Figure out a better way to do this
         int numberOfArguments = i;
-        if(collectionOfInputs[0] != '\0') {  
+        if (collectionOfInputs[0] != '\0') {  
             if (strcmp(collectionOfInputs[0], "cd") == 0) {
                 if (numberOfArguments == 1 || (numberOfArguments == 2 && strcmp(collectionOfInputs[i - 1], "&") == 0)) {
                     chdir(getenv("HOME"));
                 } else {
                     chdir(collectionOfInputs[1]);
                 }
+            } else if (strcmp(collectionOfInputs[0], "sup") == 0) {
+                syscall(333, NULL);
             } else if (strcmp(collectionOfInputs[i - 1], "&") == 0) {
                 if (!fork()) {
                     if(!fork()) {
