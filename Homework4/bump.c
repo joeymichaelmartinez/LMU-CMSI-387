@@ -14,22 +14,38 @@ void execution(char** collectionOfInputs, int numberOfArguments) {
     execv(bin, collectionOfInputs);
 }
 
+void fork_handler(char** collectionOfInputs, int numberOfArguments) {
+    if (!fork()) {
+        if(!fork()) {
+            collectionOfInputs[numberOfArguments - 1] = '\0';
+            execution(collectionOfInputs, numberOfArguments - 1);
+        } else {
+            exit(0);
+        }
+    } else {
+        wait(NULL);
+    }
+}
+
 int main(int argc, char** argv) {
     chdir(getenv("HOME"));
     while (1) {
-        char buf[BUFFERSIZE]; // Get proper size for this
+        char buf[BUFFERSIZE]; 
         char input[BUFFERSIZE];
+        
         printf("BUMP::%s:: ", getcwd(buf, BUFFERSIZE));
+        
         fgets(input, BUFFERSIZE, stdin);
+        
         char* separatedInputs = strtok(input, " \n");
-        char* collectionOfInputs[BUFFERSIZE]; // Figure out what space to allocate
-        int i = 0;
-        while (separatedInputs != NULL) {
+        char* collectionOfInputs[BUFFERSIZE];
+        
+        int i;
+        for (i = 0; separatedInputs != NULL; i++) {
             collectionOfInputs[i] = separatedInputs;
             separatedInputs = strtok(NULL, " \n");
-            i++;
         }
-        collectionOfInputs[i] = '\0'; // Figure out a better way to do this
+        collectionOfInputs[i] = '\0';
         int numberOfArguments = i;
         if (collectionOfInputs[0] != '\0') {  
             if (strcmp(collectionOfInputs[0], "cd") == 0) {
@@ -41,16 +57,7 @@ int main(int argc, char** argv) {
             } else if (strcmp(collectionOfInputs[0], "sup") == 0) {
                 syscall(333, NULL);
             } else if (strcmp(collectionOfInputs[i - 1], "&") == 0) {
-                if (!fork()) {
-                    if(!fork()) {
-                        collectionOfInputs[i - 1] = '\0';
-                        execution(collectionOfInputs, i - 1);
-                    } else {
-                        return 0;
-                    }
-                } else {
-                    wait(NULL);
-                }
+                fork_handler(collectionOfInputs, numberOfArguments);
             } else {
                 if (!fork()) {
                     execution(collectionOfInputs, i);
